@@ -1,0 +1,9 @@
+From: {{ .From }}
+To: {{ .Recipient }}
+Subject: Verifiera din mejladress
+
+Roligt att du vill kommentera på lisaforare.se!
+
+Klicka på länken för att verifiera din mejladress och komma igång:
+
+{{ .Link }}

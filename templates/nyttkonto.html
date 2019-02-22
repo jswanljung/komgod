@@ -1,0 +1,29 @@
+{{ define "main"}}
+<header><h1>Skapa konto</h1></header>
+<p>
+	Du får gärna kommentera här men inte utan en verifierad mejladress. Mejladressen kommer aldrig att synas utåt och vi lovar på heder och samvete att aldrig sprida den vidare. När du har registrerat dig här så mejlar vi dig en länk för att verifiera din mejladress. Efter att du har klickat på den får du härja i kommentarsfälten. 
+</p>
+<p>
+	Vi slarvar inte med lösenorden (de hashas med bcrypt så att ingen ska kunna läsa dem) men det är alltid bra att välja ett som du inte använder någon annanstans.
+</p>
+<form action="/kommentarer/skapakonto" method="post">
+	<div>
+		<label for="name">Användarnamn (det som andra ser):</label>
+		<input type="text" id="name" name="user_name" required>
+	</div>
+	<div>
+		<label for="epost">Epost:</label>
+		<input type="email" id="epost" name="email" required>
+	</div>
+	<div>
+		<label for="pwd">Lösenord:</label>
+		<input type="password" id="pwd" name="pwd" required>
+	</div><div>
+		<label for="pwd2">Bekräfta lösenord:</label>
+		<input type="password" id="pwd2" name="pwd2" required>
+	</div>
+	<div>
+		<button>Skapa konto</button>
+	</div>
+</form>
+{{ end }}

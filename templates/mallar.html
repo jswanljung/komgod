@@ -1,0 +1,35 @@
+{{define "kontoskapat"}}
+<h1 class="modalhead">Kolla din inbox!</h1>
+<div class="modalcontent"><p>Vi har nu skickat ett mejl till {{.Email}}. Klicka på länken i mejlet för att verifiera din mejladress. Sen kan du logga in och börja kommentera.</p><div>
+{{end}}
+
+{{define "useralreadyexists"}}
+<h1 class="modalhead">Kontot finns redan!</h1>
+<div class="modalcontent">
+<p>Det finns redan ett konto med användarnamnet {{.Username}} (men inte den mejladress du angav). Har du kanske redan registrerat ett konto med en annan adress? Annars får du prova igen med ett nytt användarnamn.</p></div>
+{{end}}
+
+{{define "emailalreadyexists"}}
+<h1 class="modalhead">Kontot finns redan!</h1>
+<div class="modalcontent">
+<p>Det finns redan ett konto registrerat med mejladressen {{.Email}}. Har du glömt ditt lösenord? Klicka här så skickar vi ett mejl med en länk till en sida där du kan välja ett nytt lösenord.</p></div>
+{{end}}
+
+{{define "generalerror"}}
+<h1 class="modalhead">Det blev fel!</h1>
+<div class="modalcontent">
+	<p>Något oväntat blev fel när servern skulle behandla dina uppgifter. Vi beklagar detta! Försök på nytt.</p>
+</div>
+{{end}}
+
+{{define "loginerror"}}
+<h1 class="modalhead">Kunde inte logga in!</h1>
+<div class="modalcontent">
+<p>Det gick inte att logga in med den kombinationen av användarnamn eller mejl och lösenord. Har du glömt ditt lösenord? Klicka här.</p></div>
+{{end}}
+
+{{define "notverified"}}
+<h1 class="modalhead">Mejladressen ej verifierad!</h1>
+<div class="modalcontent">
+<p>Innan du kan logga in så måste du verifiera mejladressen. Kontrollera din inbox. (Kan verifikationsmejlet ha fastnat i spamfiltret?)</p></div>
+{{end}}
