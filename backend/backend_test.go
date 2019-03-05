@@ -133,13 +133,14 @@ func TestInsertComment(t *testing.T) {
 	path := "/komgo/"
 	user, _ := getUserFromEmail(email)
 	_ = InsertComment(0, path, "Dish ish a very schmart comment", user.ID)
-	clist, _ := GetComments(path, user)
+	clist, _, _ := GetComments(path, user)
 	id := clist[0].ID
 	_ = InsertComment(id, path, "And dish ish a clever reply", user.ID)
 	_ = InsertComment(id, path, "No it's not", user.ID)
 	_ = InsertComment(0, path, "Screw all of you", user.ID)
 
-	clist, _ = GetComments(path, user)
+	clist, last, _ := GetComments(path, user)
+	t.Log(last)
 	var buf bytes.Buffer
 	encoder := json.NewEncoder(&buf)
 	encoder.Encode(clist)

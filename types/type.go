@@ -4,47 +4,18 @@ import (
 	"log"
 )
 
-type role int
-
-//nolint
-const (
-	BlockedRole    role = -1000
-	UnverifiedRole role = -1
-	DefaultRole    role = 0
-	AdminRole      role = 1000
-)
-
 // User is a struct for user data
 type User struct {
-	UserName   string `json:"username"`
-	Email      string `json:"-"`
-	Role       role   `json:"role"`
-	ScreenName string `json:"screenname"`
-	Created    string `json:"-"`
 	ID         int    `json:"-"`
+	UserName   string `json:"username"`
+	ScreenName string `json:"screenname"`
+	Email      string `json:"-"`
 	Pwdhash    string `json:"-"`
-}
-
-// IsVerified checks if the user is someone that has can comment
-func (u User) IsVerified() bool {
-	if u.Role == DefaultRole || u.Role == AdminRole {
-		return true
-	}
-	return false
-}
-
-// IsUnverified checks specifically whether the user is not yet
-// verified. Blocked users need not apply.
-func (u User) IsUnverified() bool {
-	return u.Role == UnverifiedRole
-}
-
-// IsAdmin checks if the user is an administrator
-func (u User) IsAdmin() bool {
-	if u.Role == AdminRole {
-		return true
-	}
-	return false
+	Created    string `json:"-"`
+	IsVerified bool   `json:"-"`
+	IsAdmin    bool   `json:"isadmin"`
+	IsBlocked  bool   `json:"isblocked"`
+	WantsMail  bool   `json:"yestomail"`
 }
 
 // IsSomebody checks if the user is initialized
@@ -52,27 +23,19 @@ func (u User) IsSomebody() bool {
 	return u.ID > 0
 }
 
-type status int
-
-// nolint
-const (
-	VisibleStatus status = 1
-	HiddenStatus  status = -1
-)
-
 // Comlist is a slice of Comment pointers with some methods
 type Comlist []*Comment
 
 // Comment is a type
 type Comment struct {
-	Path       string  `json:"-"`
-	UserName   string  `json:"username"`
-	ScreenName string  `json:"screenname"`
-	Content    string  `json:"content"`
-	Created    string  `json:"created"`
 	ID         int     `json:"id"`
 	Parent     int     `json:"parent"`
-	Status     status  `json:"status"`
+	Path       string  `json:"-"`
+	Content    string  `json:"content"`
+	UserName   string  `json:"username"`
+	ScreenName string  `json:"screenname"`
+	Created    string  `json:"created"`
+	IsVisible  bool    `json:"isvisible"`
 	Children   Comlist `json:"children"`
 }
 

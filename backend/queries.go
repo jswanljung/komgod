@@ -19,6 +19,10 @@ var (
 	allCommentsStmt,
 	commentsSinceStmt,
 	updateRankStmt,
+	blockUserStmt,
+	unblockUserStmt,
+	hideCommentStmt,
+	unhideCommentStmt,
 	userFromTokenStmt *sql.Stmt
 )
 
@@ -35,23 +39,25 @@ func prepareStatements() (err error) {
 		`CREATE TABLE IF NOT EXISTS users (
 		userid INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, 
 		username TEXT UNIQUE NOT NULL, 
+		screenname TEXT NOT NULL,
 		email TEXT UNIQUE NOT NULL, 
 		pwdhash TEXT NOT NULL, 
-		role INTEGER DEFAULT (-1) NOT NULL,
-		screenname TEXT NOT NULL,
-		yestomail INTEGER DEFAULT (0) NOT NULL, 
-		created DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL
+		created DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+		isverified BOOL DEFAULT (FALSE) NOT NULL,
+		isadmin BOOL DEFAULT (FALSE) NOT NULL,
+		isblocked BOOL DEFAULT (FALSE) NOT NULL,
+		wantsmail BOOL DEFAULT (FALSE) NOT NULL
 		);`)
 
 	commentsInitStmt = p(
 		`CREATE TABLE IF NOT EXISTS comments (
-		commentid INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, 
+		commentid INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
 		parentid INTEGER, 
 		path TEXT NOT NULL,
 		content TEXT NOT NULL,
 		userid INTEGER NOT NULL, 
 		created DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL, 
-		status INTEGER DEFAULT (1) NOT NULL,
+		isvisible BOOL DEFAULT (TRUE) NOT NULL,
 		rank TEXT
 		);`)
 
@@ -86,11 +92,29 @@ func prepareStatements() (err error) {
 		`)
 
 	userFromEmailStmt = p(
-		`SELECT username, email, role, screenname, created, userid, pwdhash
+		`SELECT 
+			userid,
+			username, 
+			screenname,
+			email,
+			pwdhash, 
+			created,
+			isverified,
+			isadmin,
+			wantsmail  
 		FROM users WHERE email=?`)
 
 	userFromUserNameStmt = p(
-		`SELECT username, email, role, screenname, created, userid, pwdhash
+		`SELECT 
+			userid,
+			username, 
+			screenname,
+			email,
+			pwdhash, 
+			created,
+			isverified,
+			isadmin,
+			wantsmail 
 		FROM users WHERE username=?`)
 
 	addSessionStmt = p(
@@ -102,20 +126,22 @@ func prepareStatements() (err error) {
 
 	userFromTokenStmt = p(
 		`SELECT 
-		username,
-		email,
-		role,
-		screenname,
-		users.created,
-		users.userid,
-		pwdhash
+			users.userid,
+			username, 
+			screenname,
+			email,
+			pwdhash, 
+			users.created,
+			isverified,
+			isadmin,
+			wantsmail 
 	FROM users INNER JOIN sessions ON users.userid=sessions.userid WHERE token = ?;`)
 
 	removeTokenStmt = p(
 		`DELETE FROM sessions WHERE token=?;`)
 
 	verifyUserStmt = p(
-		`UPDATE users SET role=? WHERE userid=?;`)
+		`UPDATE users SET isverified=TRUE WHERE userid=?;`)
 
 	insertCommentStmt = p(
 		`INSERT INTO comments (
@@ -131,12 +157,12 @@ func prepareStatements() (err error) {
 		parentid,
 		path,
 		content,
-		screenname,
 		username,
-		status,
-		comments.created
+		screenname,
+		comments.created,
+		isvisible
 		FROM comments INNER JOIN users ON comments.userid = users.userid WHERE 
-		path=? AND comments.created > ? ORDER BY commentid;`)
+		path=? AND commentid > ? ORDER BY commentid;`)
 
 	allCommentsStmt = p(
 		`SELECT
@@ -144,10 +170,10 @@ func prepareStatements() (err error) {
 		parentid,
 		path,
 		content,
-		screenname,
 		username,
-		status,
-		comments.created
+		screenname,
+		comments.created,
+		isvisible
 		FROM comments INNER JOIN users ON comments.userid = users.userid WHERE 
 		path=? ORDER BY rank;`)
 
@@ -158,6 +184,22 @@ func prepareStatements() (err error) {
 		ELSE printf("%010u-%010u", parentid, commentid)
 		END
 		WHERE rank IS NULL;`)
+
+	blockUserStmt = p(
+		`UPDATE users SET
+		isblocked = TRUE WHERE userid = ?;`)
+
+	unblockUserStmt = p(
+		`UPDATE users SET
+		isblocked = FALSE WHERE userid = ?;`)
+
+	hideCommentStmt = p(
+		`UPDATE comments SET
+		isvisible = FALSE WHERE commentid = ?;`)
+
+	unhideCommentStmt = p(
+		`UPDATE comments SET
+		isvisible = TRUE WHERE commentid = ?;`)
 
 	return
 }

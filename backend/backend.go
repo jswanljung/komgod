@@ -34,9 +34,16 @@ func Close() {
 }
 
 func scanUser(row *sql.Row, user *types.User) (err error) {
-	err = row.Scan(&user.UserName, &user.Email,
-		&user.Role, &user.ScreenName, &user.Created,
-		&user.ID, &user.Pwdhash)
+	err = row.Scan(
+		&user.ID,
+		&user.UserName,
+		&user.ScreenName,
+		&user.Email,
+		&user.Pwdhash,
+		&user.Created,
+		&user.IsVerified,
+		&user.IsAdmin,
+		&user.WantsMail)
 	return
 }
 
@@ -98,7 +105,7 @@ func Login(emailorusername string, password string, remember bool) (token string
 	if err != nil {
 		return
 	}
-	if !user.IsVerified() {
+	if !user.IsVerified {
 		err = UserNotVerifiedError
 		return
 	}
@@ -114,11 +121,11 @@ func VerifyAccount(token string) (err error) {
 	if err != nil {
 		return
 	}
-	if user.IsVerified() {
+	if user.IsVerified {
 		err = UserAlreadyVerifiedError
 		return
 	}
-	_, err = verifyUserStmt.Exec(types.DefaultRole, user.ID)
+	_, err = verifyUserStmt.Exec(user.ID)
 	return
 }
 
@@ -162,56 +169,55 @@ func AddUser(username, email, password, screenname string) (token string, err er
 	return
 }
 
-// GetComments returns a list of all comments visible to user
-func GetComments(path string, user types.User) (comments types.Comlist, err error) {
-	rows, err := allCommentsStmt.Query(path)
+// GetComments returns a tree of all comments visible to user
+func GetComments(path string, user types.User) (comments types.Comlist, lastID int, err error) {
+	return GetCommentsSince(path, 0, user)
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+// GetCommentsSince returns a list of all comments visible to user since time. If
+// since.IsZero(), returns a tree, otherwise just a list.
+func GetCommentsSince(path string, sinceID int, user types.User) (comments types.Comlist, lastID int, err error) {
+	var rows *sql.Rows
+	asTree := false
+	if sinceID == 0 {
+		rows, err = allCommentsStmt.Query(path)
+		asTree = true
+	} else {
+		rows, err = commentsSinceStmt.Query(path, sinceID)
+	}
 	if err != nil {
 		return
 	}
+
 	for rows.Next() {
 		var newComment types.Comment
-		err = rows.Scan(&newComment.ID, &newComment.Parent, &newComment.Path,
-			&newComment.Content, &newComment.ScreenName, &newComment.UserName,
-			&newComment.Status, &newComment.Created)
+		err = rows.Scan(
+			&newComment.ID,
+			&newComment.Parent,
+			&newComment.Path,
+			&newComment.Content,
+			&newComment.UserName,
+			&newComment.ScreenName,
+			&newComment.Created,
+			&newComment.IsVisible)
 		if err != nil {
 			continue
 		}
-		if user.IsAdmin() || newComment.Status == types.VisibleStatus {
-			if newComment.Parent != 0 {
+
+		lastID = max(lastID, newComment.ID)
+		if user.IsAdmin || newComment.IsVisible {
+			if asTree && newComment.Parent != 0 {
 				comments.AppendChildToLast(&newComment)
 			} else {
 				comments = append(comments, &newComment)
 			}
-		}
-	}
-	if err != nil {
-		return
-	}
-	// An empty result is normal if there are no comments on the page
-	// Other database errors are not okay.
-	if e := rows.Err(); e != sql.ErrNoRows {
-		err = e
-	}
-	return
-}
-
-// GetCommentsSince returns a list of all comments visible to user since time. Unlike what
-// GetComments returns, these are simply in order of creation, not in a tree
-func GetCommentsSince(path string, since time.Time, user types.User) (comments types.Comlist, err error) {
-	rows, err := commentsSinceStmt.Query(path, since)
-	if err != nil {
-		return
-	}
-	for rows.Next() {
-		var newComment types.Comment
-		err = rows.Scan(&newComment.ID, &newComment.Parent, &newComment.Path,
-			&newComment.Content, &newComment.ScreenName, &newComment.UserName,
-			&newComment.Status, &newComment.Created)
-		if err != nil {
-			continue
-		}
-		if user.IsAdmin() || newComment.Status == types.VisibleStatus {
-			comments = append(comments, &newComment)
 		}
 	}
 	if err != nil {
